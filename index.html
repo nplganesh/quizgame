@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App perferct song test</title>
+    <style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 15px; /* Adjust border radius as needed */
+    box-shadow: 0 0 20px #9400D3, 0 0 40px #9400D3, 0 0 60px #9400D3, 0 0 80px #9400D3; /* Purple neon glow */
+}
+
+
+h1 {
+    text-align: center;
+}
+
+.countdown-bar {
+    text-align: center;
+    margin: 20px auto;
+    position: relative;
+    width: 100px;
+    height: 100px;
+    background-color: skyblue;
+    border: 3px solid #39ff14; /* Neon black */
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.countdown-circle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.countdown-number {
+    font-size: 36px;
+}
+
+.question {
+    margin-bottom: 20px;
+}
+
+.options {
+    list-style-type: none;
+    padding: 0;
+}
+
+.options li {
+    margin-bottom: 10px;
+    border: 1px solid black;
+    border-radius: 25px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.result {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+#nextBtn,
+#playAgainBtn {
+    display: inline-block;
+    background-color: #f0f8ff; /* AliceBlue */
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#nextBtn:hover,
+#playAgainBtn:hover {
+    background-color: #add8e6; /* LightBlue */
+}
+.options li {
+    margin-bottom: 10px;
+    border: 1px solid black;
+    border-radius: 25px;
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s; /* Add transition effect */
+}
+
+.correct {
+    background-color: #4caf50; /* Green */
+}
+
+.incorrect {
+    background-color: #f44336; /* Red */
+}
+/*---------------next button***********/
+#playAgainBtn,
+#playMoreBtn {
+    display: none; /* Hide both buttons by default */
+    background-color: #f0f8ff; /* AliceBlue */
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#playAgainBtn:hover,
+#playMoreBtn:hover {
+    background-color: #add8e6; /* LightBlue */
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <audio id="amusic" src="music/rightanswer.mp3"></audio>
+<audio id="bmusic" src="music/wronganswer.mp3"></audio>
+<audio id="cmusic" src="music/success.mp3"></audio>
+
+        <h1>Quiz App</h1>
+        <div class="countdown-bar" id="countdownBar"></div>
+        <div class="question" id="question"></div>
+        <ul class="options" id="options"></ul>
+        <div class="result" id="result"></div>
+        <button id="nextBtn">Next</button>
+        <button id="playAgainBtn" style="display: none;">Play Again</button>
+        <button id="playMoreBtn" style="display: none;">Play More 10 Qstns</button>
+        <button id="goBackBtn" style="display: none;">Go Back</button>
+    </div>
+    <script>
+const questions = [
+    {
+        question: "What is the capital of France?",
+        options: ["Paris", "London", "Berlin", "Rome"],
+        answer: "Paris"
+    },
+    {
+        question: "Which planet is known as the Red Planet?",
+        options: ["Venus", "Mars", "Jupiter", "Saturn"],
+        answer: "Mars"
+    },
+    {
+        question: "What is the chemical symbol for water?",
+        options: ["H2O", "CO2", "O2", "CH4"],
+        answer: "H2O"
+    },
+    {
+        question: "What is the chemical symbol for carbondioxide?",
+        options: ["H2O", "CO2", "O2", "CH4"],
+        answer: "CO2"
+    },
+    {
+        question: "What is the chemical symbol for oxygen?",
+        options: ["H2O", "CO2", "O2", "CH4"],
+        answer: "O2"
+    },
+
+];
+
+let currentQuestion = 0;
+let score = 0;
+let countdownTimer;
+
+const questionElement = document.getElementById('question');
+const optionsElement = document.getElementById('options');
+const resultElement = document.getElementById('result');
+const nextButton = document.getElementById('nextBtn');
+const playAgainButton = document.getElementById('playAgainBtn');
+const countdownBar = document.getElementById('countdownBar');
+
+function startCountdown() {
+    if (currentQuestion < questions.length) {
+        let timeLeft = 10;
+        countdownBar.innerHTML = '<div class="countdown-circle" id="countdownCircle"><span class="countdown-number" id="countdownNumber">10</span></div>';
+        const countdownNumber = document.getElementById('countdownNumber');
+        countdownTimer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft === 0) {
+                clearInterval(countdownTimer);
+                checkAnswer(null); // Timeout reached, no answer selected
+            }
+            countdownNumber.textContent = timeLeft;
+            updateCircle(timeLeft);
+        }, 1000);
+    }
+}
+
+function stopCountdown() {
+    clearInterval(countdownTimer);
+}
+
+function updateCircle(timeLeft) {
+    const circumference = 2 * Math.PI * 50;
+    const dashoffset = ((10 - timeLeft) / 10) * circumference;
+    countdownBar.style.strokeDasharray = `${circumference}px ${circumference}px`;
+    countdownBar.style.strokeDashoffset = dashoffset;
+}
+
+function displayQuestion() {
+    startCountdown();
+    const q = questions[currentQuestion];
+    questionElement.textContent = q.question;
+
+    optionsElement.innerHTML = '';
+    q.options.forEach(option => {
+        const li = document.createElement('li');
+        li.textContent = option;
+        li.addEventListener('click', () => checkAnswer(option));
+        optionsElement.appendChild(li);
+    });
+}
+
+function checkAnswer(selectedOption) {
+    stopCountdown();
+    const q = questions[currentQuestion];
+    if (selectedOption === q.answer) {
+        score++;
+        resultElement.textContent = "Correct!";
+    } else {
+        resultElement.textContent = "Incorrect!";
+    }
+    nextButton.disabled = false;
+}
+
+function nextQuestion() {
+    currentQuestion++;
+    if (currentQuestion < questions.length) {
+        displayQuestion();
+        resultElement.textContent = '';
+        nextButton.disabled = true;
+    } else {
+        showScore();
+    }
+}
+
+function showScore() {
+    questionElement.textContent = `Your Score: ${score}/${questions.length}`;
+    optionsElement.innerHTML = '';
+    resultElement.textContent = '';
+    nextButton.style.display = 'none';
+    playAgainButton.style.display = 'inline';
+    stopCountdown(); // Stop countdown when all questions are answered
+}
+
+function resetQuiz() {
+    currentQuestion = 0;
+    score = 0;
+    nextButton.style.display = 'inline';
+    playAgainButton.style.display = 'none';
+    displayQuestion();
+}
+
+displayQuestion();
+
+nextButton.addEventListener('click', nextQuestion);
+playAgainButton.addEventListener('click', resetQuiz);
+// Inside the checkAnswer() function
+
+function checkAnswer(selectedOption) {
+    stopCountdown();
+    const q = questions[currentQuestion];
+    const options = document.querySelectorAll('.options li');
+    options.forEach(option => {
+        option.classList.remove('correct', 'incorrect'); // Remove any existing classes
+        if (option.textContent === q.answer) {
+            option.classList.add('correct');
+        } else {
+            option.classList.add('incorrect');
+        }
+    });
+    if (selectedOption === q.answer) {
+        score++;
+        resultElement.textContent = "Correct!";
+    } else {
+        resultElement.textContent = "Incorrect!";
+    }
+    nextButton.disabled = false;
+}
+// Inside the showScore() function
+
+function showScore() {
+    questionElement.textContent = `Your Score: ${score}/${questions.length}`;
+    optionsElement.innerHTML = '';
+    resultElement.textContent = '';
+    nextButton.style.display = 'none';
+    playAgainButton.style.display = 'inline'; // Display Play Again button
+    playMoreBtn.style.display = 'inline'; // Display Play More button
+    stopCountdown(); // Stop countdown when all questions are answered
+}
+
+// lkfpmfmpmepmemgalema
+function checkAnswer(selectedOption) {
+    stopCountdown();
+    const q = questions[currentQuestion];
+    const options = document.querySelectorAll('.options li');
+    options.forEach(option => {
+        option.classList.remove('correct', 'incorrect'); // Remove any existing classes
+        if (option.textContent === q.answer) {
+            option.classList.add('correct');
+        } else {
+            option.classList.add('incorrect');
+        }
+    });
+    if (selectedOption === q.answer) {
+        score++;
+        resultElement.textContent = "Correct!";
+        document.getElementById('amusic').play(); // Play "amusic" for correct answer
+    } else {
+        resultElement.textContent = "Incorrect!";
+        document.getElementById('bmusic').play(); // Play "bmusic" for incorrect answer
+    }
+    nextButton.disabled = false;
+}
+
+function showScore() {
+    questionElement.textContent = `Your Score: ${score}/${questions.length}`;
+    optionsElement.innerHTML = '';
+    resultElement.textContent = '';
+    nextButton.style.display = 'none';
+    playAgainButton.style.display = 'inline'; // Display Play Again button
+    playMoreBtn.style.display = 'inline'; // Display Play More button
+    stopCountdown(); // Stop countdown when all questions are answered
+    document.getElementById('cmusic').play(); // Play "cmusic" after finishing questions
+}
+
+    </script>
+</body>
+</html>
